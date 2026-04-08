@@ -44,6 +44,12 @@
         <artifactId>spring-boot-starter-validation</artifactId>
     </dependency>
 
+    <!-- Password hashing -->
+    <dependency>
+        <groupId>org.springframework.security</groupId>
+        <artifactId>spring-security-crypto</artifactId>
+    </dependency>
+
     <!-- Email OTP -->
     <dependency>
         <groupId>org.springframework.boot</groupId>
