@@ -14,6 +14,10 @@ public class Service {
     private String name;
     private String description;
     private String category;
+    private String location;
+    private String hours;
+    private String phone;
+    private String status;
 
     // getters and setters
     public Long getId() { return id; }
@@ -24,4 +28,12 @@ public class Service {
     public void setDescription(String description) { this.description = description; }
     public String getCategory() { return category; }
     public void setCategory(String category) { this.category = category; }
+    public String getLocation() { return location; }
+    public void setLocation(String location) { this.location = location; }
+    public String getHours() { return hours; }
+    public void setHours(String hours) { this.hours = hours; }
+    public String getPhone() { return phone; }
+    public void setPhone(String phone) { this.phone = phone; }
+    public String getStatus() { return status; }
+    public void setStatus(String status) { this.status = status; }
 }

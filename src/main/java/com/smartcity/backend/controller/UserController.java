@@ -7,6 +7,8 @@ import org.springframework.core.env.Environment;
 import org.springframework.http.ResponseEntity;
 import org.springframework.mail.SimpleMailMessage;
 import org.springframework.mail.javamail.JavaMailSender;
+import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
+import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.web.bind.annotation.*;
 
 import java.time.Duration;
@@ -29,6 +31,7 @@ public class UserController {
     @Autowired
     private Environment environment;
 
+    private final PasswordEncoder passwordEncoder = new BCryptPasswordEncoder();
     private static final ConcurrentHashMap<String, OtpEntry> otpStore = new ConcurrentHashMap<>();
     private static final long OTP_EXPIRATION_MILLIS = Duration.ofMinutes(5).toMillis();
 
@@ -66,6 +69,7 @@ public class UserController {
             throw new RuntimeException("User already exists");
         }
 
+        user.setPassword(passwordEncoder.encode(user.getPassword()));
         return userRepository.save(user);
     }
 
@@ -75,9 +79,7 @@ public class UserController {
 
         User existingUser = userRepository.findByUsername(user.getUsername());
 
-        if (existingUser == null ||
-            !existingUser.getPassword().equals(user.getPassword())) {
-
+        if (existingUser == null || !checkPasswordAndUpgrade(existingUser, user.getPassword())) {
             return ResponseEntity.status(401).body("Invalid credentials");
         }
 
@@ -88,8 +90,7 @@ public class UserController {
     public ResponseEntity<?> requestOtp(@RequestBody User user) {
         User existingUser = userRepository.findByUsername(user.getUsername());
 
-        if (existingUser == null ||
-            !existingUser.getPassword().equals(user.getPassword())) {
+        if (existingUser == null || !checkPasswordAndUpgrade(existingUser, user.getPassword())) {
             return ResponseEntity.status(401).body("Invalid credentials");
         }
 
@@ -129,6 +130,24 @@ public class UserController {
         }
 
         return ResponseEntity.ok(existingUser);
+    }
+
+    private boolean checkPasswordAndUpgrade(User existingUser, String rawPassword) {
+        String storedPassword = existingUser.getPassword();
+        if (storedPassword == null) {
+            return false;
+        }
+
+        if (storedPassword.startsWith("$2a$") || storedPassword.startsWith("$2b$") || storedPassword.startsWith("$2y$")) {
+            return passwordEncoder.matches(rawPassword, storedPassword);
+        }
+
+        if (storedPassword.equals(rawPassword)) {
+            existingUser.setPassword(passwordEncoder.encode(rawPassword));
+            userRepository.save(existingUser);
+            return true;
+        }
+        return false;
     }
 
     private String generateOtp() {
